@@ -14,5 +14,9 @@
   {
     "ParameterKey": "CertificateArn",
     "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "ExistingFileUploadBucket",
+    "ParameterValue": "jordan-opal-demo"
   }
 ]

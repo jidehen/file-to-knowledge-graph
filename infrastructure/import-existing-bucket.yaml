@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Import existing S3 bucket into CloudFormation management'
+
+Parameters:
+  ExistingBucketName:
+    Type: String
+    Default: 'jordan-opal-demo'
+    Description: 'Name of the existing S3 bucket to import'
+  
+  ProjectName:
+    Type: String
+    Default: 'file-to-knowledge-graph'
+    Description: 'Name of the project'
+  
+  Environment:
+    Type: String
+    Default: 'prod'
+    Description: 'Environment name'
+
+Resources:
+  # Import existing bucket (will not modify it)
+  ExistingFileUploadBucket:
+    Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Ref ExistingBucketName
+      Tags:
+        - Key: 'Project'
+          Value: !Ref ProjectName
+        - Key: 'Environment'
+          Value: !Ref Environment
+        - Key: 'Purpose'
+          Value: 'File Upload Storage'
+        - Key: 'ManagedBy'
+          Value: 'CloudFormation'
+
+  # New bucket for website hosting
+  WebsiteBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${ProjectName}-${Environment}-website'
+      WebsiteConfiguration:
+        IndexDocument: 'index.html'
+        ErrorDocument: 'index.html'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: ['GET', 'HEAD']
+            AllowedOrigins: ['*']
+            MaxAge: 3600
+      Tags:
+        - Key: 'Project'
+          Value: !Ref ProjectName
+        - Key: 'Environment'
+          Value: !Ref Environment
+        - Key: 'Purpose'
+          Value: 'Static Website Hosting'
+
+Outputs:
+  ExistingBucketName:
+    Description: 'Name of the imported file upload bucket'
+    Value: !Ref ExistingFileUploadBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-FileUploadBucket'
+  
+  WebsiteBucketName:
+    Description: 'Name of the website hosting bucket'
+    Value: !Ref WebsiteBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-WebsiteBucket'

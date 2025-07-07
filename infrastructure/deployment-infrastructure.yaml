@@ -22,6 +22,11 @@ Parameters:
     Type: String
     Default: ''
     Description: 'Optional: ACM certificate ARN for custom domain (must be in us-east-1)'
+  
+  ExistingFileUploadBucket:
+    Type: String
+    Default: 'jordan-opal-demo'
+    Description: 'Existing S3 bucket name for file uploads'
 
 Conditions:
   HasCustomDomain: !Not [!Equals [!Ref DomainName, '']]
@@ -228,6 +233,12 @@ Outputs:
     Value: !Ref WebsiteBucket
     Export:
       Name: !Sub '${AWS::StackName}-WebsiteBucketName'
+
+  FileUploadBucketName:
+    Description: 'Name of the existing S3 bucket for file uploads'
+    Value: !Ref ExistingFileUploadBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-FileUploadBucketName'
 
   WebsiteURL:
     Description: 'S3 Website URL'
