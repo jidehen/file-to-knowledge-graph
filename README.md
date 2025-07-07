@@ -147,6 +147,25 @@ Builds the app for production to the `build` folder.
 3. **Upload Failures**: Verify S3 bucket permissions and IAM policy
 4. **Build Errors**: Ensure all dependencies are installed with `npm install`
 
+## Deployment
+
+This application can be deployed as a static website on AWS S3 with automatic deployment from GitHub.
+
+### Quick Deploy to S3
+For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+1. **Create S3 bucket** for static website hosting
+2. **Set up IAM user** for GitHub Actions
+3. **Configure GitHub secrets** with AWS credentials
+4. **Push to main branch** - automatic deployment via GitHub Actions!
+
+### Live Demo
+Once deployed, you'll have:
+- 🌐 **Public URL**: Your S3 website endpoint or CloudFront domain
+- 🔄 **Auto-updates**: Push to main branch = instant deployment
+- 🚀 **Fast loading**: Optimized build served via CDN
+- 🔒 **Secure**: Separate buckets for website and file uploads
+
 ## License
 
 This project is licensed under the MIT License.
