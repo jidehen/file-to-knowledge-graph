@@ -149,10 +149,28 @@ Builds the app for production to the `build` folder.
 
 ## Deployment
 
-This application can be deployed as a static website on AWS S3 with automatic deployment from GitHub.
+This application can be deployed as a static website on AWS using two approaches:
 
-### Quick Deploy to S3
-For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+### 🚀 **Option 1: CloudFormation (Recommended)**
+Infrastructure as Code approach for production deployments:
+
+```bash
+cd infrastructure
+./deploy.sh prod us-east-1
+```
+
+See [CLOUDFORMATION-DEPLOYMENT.md](./CLOUDFORMATION-DEPLOYMENT.md) for complete instructions.
+
+**Benefits:**
+- ✅ **One-command deployment** of all infrastructure
+- ✅ **Production-ready** with CloudFront CDN and HTTPS
+- ✅ **Reproducible** infrastructure
+- ✅ **Easy to manage** and update
+
+### 📝 **Option 2: Manual Setup**
+Step-by-step manual configuration:
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed manual instructions.
 
 1. **Create S3 bucket** for static website hosting
 2. **Set up IAM user** for GitHub Actions
