@@ -132,56 +132,31 @@ Resources:
         - Key: 'Environment'
           Value: !Ref Environment
 
-  # IAM Role for GitHub Actions
-  GitHubActionsRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      RoleName: !Sub '${ProjectName}-${Environment}-github-actions-role'
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: 'Allow'
-            Principal:
-              Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
-            Action: 'sts:AssumeRoleWithWebIdentity'
-            Condition:
-              StringEquals:
-                'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com'
-              StringLike:
-                'token.actions.githubusercontent.com:sub': 'repo:jidehen/file-to-knowledge-graph:*'
-      ManagedPolicyArns: []
-      Tags:
-        - Key: 'Project'
-          Value: !Ref ProjectName
-        - Key: 'Environment'
-          Value: !Ref Environment
+  # Note: Commented out OIDC role - requires OIDC provider setup first
+  # GitHubActionsRole:
+  #   Type: 'AWS::IAM::Role'
+  #   Properties:
+  #     RoleName: !Sub '${ProjectName}-${Environment}-github-actions-role'
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: 'Allow'
+  #           Principal:
+  #             Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
+  #           Action: 'sts:AssumeRoleWithWebIdentity'
+  #           Condition:
+  #             StringEquals:
+  #               'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com'
+  #             StringLike:
+  #               'token.actions.githubusercontent.com:sub': 'repo:jidehen/file-to-knowledge-graph:*'
+  #     ManagedPolicyArns: []
+  #     Tags:
+  #       - Key: 'Project'
+  #         Value: !Ref ProjectName
+  #       - Key: 'Environment'
+  #         Value: !Ref Environment
 
-  # IAM Policy for GitHub Actions
-  GitHubActionsPolicy:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: !Sub '${ProjectName}-${Environment}-github-actions-policy'
-      Roles:
-        - !Ref GitHubActionsRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: 'S3BucketAccess'
-            Effect: 'Allow'
-            Action:
-              - 's3:GetObject'
-              - 's3:PutObject'
-              - 's3:PutObjectAcl'
-              - 's3:DeleteObject'
-              - 's3:ListBucket'
-            Resource:
-              - !GetAtt WebsiteBucket.Arn
-              - !Sub '${WebsiteBucket.Arn}/*'
-          - Sid: 'CloudFrontInvalidation'
-            Effect: 'Allow'
-            Action:
-              - 'cloudfront:CreateInvalidation'
-            Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+  # Note: OIDC role/policy commented out - using IAM user approach instead
 
   # Alternative: IAM User for GitHub Actions (if OIDC is not preferred)
   GitHubActionsUser:
@@ -264,11 +239,11 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-CloudFrontURL'
 
-  GitHubActionsRoleArn:
-    Description: 'ARN of the GitHub Actions IAM Role (for OIDC)'
-    Value: !GetAtt GitHubActionsRole.Arn
-    Export:
-      Name: !Sub '${AWS::StackName}-GitHubActionsRoleArn'
+  # GitHubActionsRoleArn: (commented out - using IAM user instead)
+  #   Description: 'ARN of the GitHub Actions IAM Role (for OIDC)'
+  #   Value: !GetAtt GitHubActionsRole.Arn
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-GitHubActionsRoleArn'
 
   GitHubActionsUserArn:
     Description: 'ARN of the GitHub Actions IAM User'
