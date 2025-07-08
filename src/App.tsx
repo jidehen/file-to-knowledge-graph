@@ -4,7 +4,7 @@ import FileUpload from './components/FileUpload';
 import FileBrowser from './components/FileBrowser';
 import ConflictResolution from './components/ConflictResolution';
 import S3Service from './services/s3Service';
-import { Database, Upload, AlertCircle, FolderOpen, Home } from 'lucide-react';
+import { Database, Upload, AlertCircle, FolderOpen } from 'lucide-react';
 
 function Navigation() {
   const location = useLocation();

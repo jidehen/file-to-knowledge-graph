@@ -41,11 +41,11 @@ const FileBrowser: React.FC<FileBrowserProps> = ({ bucketName, region }) => {
 
   useEffect(() => {
     loadFiles();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     filterAndSortObjects();
-  }, [objects, searchTerm, sortField, sortOrder, selectedType]);
+  }, [objects, searchTerm, sortField, sortOrder, selectedType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadFiles = async () => {
     try {
