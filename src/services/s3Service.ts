@@ -1,26 +1,46 @@
-import { S3Client, HeadObjectCommand } from '@aws-sdk/client-s3';
-import { Upload } from '@aws-sdk/lib-storage';
-
 interface S3Config {
   region: string;
-  accessKeyId: string;
-  secretAccessKey: string;
   bucketName: string;
 }
 
 class S3Service {
-  private s3Client: S3Client;
   private bucketName: string;
+  private region: string;
+  private s3PostUrl: string;
 
   constructor(config: S3Config) {
-    this.s3Client = new S3Client({
-      region: config.region,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-      },
-    });
     this.bucketName = config.bucketName;
+    this.region = config.region;
+    this.s3PostUrl = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/`;
+  }
+
+  private createFormData(file: File): FormData {
+    const formData = new FormData();
+    const key = file.name;
+    
+    // Create POST policy
+    const policy = {
+      expiration: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
+      conditions: [
+        { bucket: this.bucketName },
+        { key: key },
+        { 'Content-Type': file.type },
+        { 'x-amz-server-side-encryption': 'AES256' },
+        ['content-length-range', 0, 104857600], // 100MB max
+      ],
+    };
+
+    const encodedPolicy = btoa(JSON.stringify(policy));
+    
+    formData.append('key', key);
+    formData.append('Content-Type', file.type);
+    formData.append('x-amz-server-side-encryption', 'AES256');
+    formData.append('policy', encodedPolicy);
+    formData.append('x-amz-meta-original-name', file.name);
+    formData.append('x-amz-meta-uploaded-at', new Date().toISOString());
+    formData.append('file', file);
+
+    return formData;
   }
 
   async uploadFile(
@@ -28,33 +48,34 @@ class S3Service {
     onProgress?: (progress: number) => void
   ): Promise<string> {
     const key = file.name;
+    const formData = this.createFormData(file);
     
     try {
-      const upload = new Upload({
-        client: this.s3Client,
-        params: {
-          Bucket: this.bucketName,
-          Key: key,
-          Body: file,
-          ContentType: file.type,
-          Metadata: {
-            originalName: file.name,
-            uploadedAt: new Date().toISOString(),
-          },
-        },
-      });
-
-      if (onProgress) {
-        upload.on('httpUploadProgress', (progress) => {
-          if (progress.loaded && progress.total) {
-            const percentage = Math.round((progress.loaded / progress.total) * 100);
+      const xhr = new XMLHttpRequest();
+      
+      return new Promise((resolve, reject) => {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable && onProgress) {
+            const percentage = Math.round((e.loaded / e.total) * 100);
             onProgress(percentage);
           }
         });
-      }
 
-      await upload.done();
-      return key;
+        xhr.addEventListener('load', () => {
+          if (xhr.status === 204) {
+            resolve(key);
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`));
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error(`Upload failed: ${xhr.statusText}`));
+        });
+
+        xhr.open('POST', this.s3PostUrl);
+        xhr.send(formData);
+      });
     } catch (error) {
       console.error('Upload failed:', error);
       throw new Error(`Failed to upload ${file.name}: ${error}`);
@@ -88,16 +109,12 @@ class S3Service {
 
   async checkFileExists(fileName: string): Promise<boolean> {
     try {
-      await this.s3Client.send(new HeadObjectCommand({
-        Bucket: this.bucketName,
-        Key: fileName,
-      }));
-      return true;
-    } catch (error: any) {
-      if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
-        return false;
-      }
-      throw error;
+      const response = await fetch(`https://${this.bucketName}.s3.${this.region}.amazonaws.com/${fileName}`, {
+        method: 'HEAD',
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
     }
   }
 
@@ -164,7 +181,7 @@ class S3Service {
   }
 
   getFileUrl(key: string): string {
-    return `https://${this.bucketName}.s3.amazonaws.com/${key}`;
+    return `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
   }
 }
 

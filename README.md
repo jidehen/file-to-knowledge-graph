@@ -14,8 +14,7 @@ A React TypeScript application for uploading files to AWS S3 to build a knowledg
 ## Prerequisites
 
 - Node.js (v14 or higher)
-- AWS Account with S3 bucket configured
-- AWS credentials with S3 write permissions
+- AWS Account with S3 bucket configured for secure uploads
 
 ## Installation
 
@@ -26,12 +25,10 @@ npm install
 
 2. Set up environment variables:
    - Copy `.env.example` to `.env.local`
-   - Fill in your AWS credentials and S3 bucket information:
+   - Fill in your AWS configuration (no credentials needed):
 
 ```env
 REACT_APP_AWS_REGION=us-east-1
-REACT_APP_AWS_ACCESS_KEY_ID=your-access-key-id
-REACT_APP_AWS_SECRET_ACCESS_KEY=your-secret-access-key
 REACT_APP_S3_BUCKET_NAME=your-bucket-name
 ```
 

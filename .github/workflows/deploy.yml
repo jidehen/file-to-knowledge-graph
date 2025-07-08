@@ -26,10 +26,8 @@ jobs:
     - name: Build application
       run: npm run build
       env:
-        # React app environment variables for file uploads
+        # React app environment variables for file uploads (no credentials needed)
         REACT_APP_AWS_REGION: ${{ secrets.REACT_APP_AWS_REGION }}
-        REACT_APP_AWS_ACCESS_KEY_ID: ${{ secrets.REACT_APP_AWS_ACCESS_KEY_ID }}
-        REACT_APP_AWS_SECRET_ACCESS_KEY: ${{ secrets.REACT_APP_AWS_SECRET_ACCESS_KEY }}
         REACT_APP_S3_BUCKET_NAME: ${{ secrets.REACT_APP_S3_BUCKET_NAME }}
         
     - name: Configure AWS credentials

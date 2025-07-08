@@ -19,15 +19,11 @@ function App() {
 
   React.useEffect(() => {
     const region = process.env.REACT_APP_AWS_REGION;
-    const accessKeyId = process.env.REACT_APP_AWS_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.REACT_APP_AWS_SECRET_ACCESS_KEY;
     const bucketName = process.env.REACT_APP_S3_BUCKET_NAME;
 
-    if (region && accessKeyId && secretAccessKey && bucketName) {
+    if (region && bucketName) {
       const service = new S3Service({
         region,
-        accessKeyId,
-        secretAccessKey,
         bucketName,
       });
       setS3Service(service);
