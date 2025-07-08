@@ -1,14 +1,10 @@
-name: Deploy to S3 via CloudFormation
+name: Deploy to S3
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
-env:
-  STACK_NAME: file-to-knowledge-graph-prod
-  AWS_REGION: us-east-1
 
 jobs:
   deploy:
@@ -30,7 +26,7 @@ jobs:
     - name: Build application
       run: npm run build
       env:
-        # React app environment variables
+        # React app environment variables for file uploads
         REACT_APP_AWS_REGION: ${{ secrets.REACT_APP_AWS_REGION }}
         REACT_APP_AWS_ACCESS_KEY_ID: ${{ secrets.REACT_APP_AWS_ACCESS_KEY_ID }}
         REACT_APP_AWS_SECRET_ACCESS_KEY: ${{ secrets.REACT_APP_AWS_SECRET_ACCESS_KEY }}
@@ -41,72 +37,45 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
-        
-    - name: Get CloudFormation outputs
-      id: cf-outputs
-      run: |
-        # Get S3 bucket name from CloudFormation stack
-        BUCKET_NAME=$(aws cloudformation describe-stacks \
-          --stack-name ${{ env.STACK_NAME }} \
-          --region ${{ env.AWS_REGION }} \
-          --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucketName`].OutputValue' \
-          --output text)
-        
-        # Get CloudFront distribution ID
-        DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
-          --stack-name ${{ env.STACK_NAME }} \
-          --region ${{ env.AWS_REGION }} \
-          --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
-          --output text)
-        
-        # Get CloudFront URL
-        CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
-          --stack-name ${{ env.STACK_NAME }} \
-          --region ${{ env.AWS_REGION }} \
-          --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontURL`].OutputValue' \
-          --output text)
-        
-        echo "bucket-name=$BUCKET_NAME" >> $GITHUB_OUTPUT
-        echo "distribution-id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
-        echo "cloudfront-url=$CLOUDFRONT_URL" >> $GITHUB_OUTPUT
-        
-        echo "📦 Deploying to bucket: $BUCKET_NAME"
-        echo "🌐 CloudFront distribution: $DISTRIBUTION_ID"
-        echo "🔗 Website URL: $CLOUDFRONT_URL"
+        aws-region: ${{ secrets.AWS_REGION }}
         
     - name: Deploy to S3
       run: |
         echo "🚀 Deploying build files to S3..."
-        aws s3 sync build/ s3://${{ steps.cf-outputs.outputs.bucket-name }} \
+        aws s3 sync build/ s3://${{ secrets.S3_BUCKET_NAME }} \
           --delete \
           --cache-control "public, max-age=31536000" \
           --exclude "*.html" \
           --exclude "service-worker.js"
         
-        # Upload HTML files with shorter cache control
-        aws s3 sync build/ s3://${{ steps.cf-outputs.outputs.bucket-name }} \
+        # Upload HTML files with shorter cache control for faster updates
+        aws s3 sync build/ s3://${{ secrets.S3_BUCKET_NAME }} \
           --cache-control "public, max-age=0, must-revalidate" \
           --include "*.html" \
           --include "service-worker.js"
         
         echo "✅ S3 deployment complete"
         
-    - name: Invalidate CloudFront cache
+    - name: Invalidate CloudFront cache (if configured)
       run: |
-        echo "🔄 Invalidating CloudFront cache..."
-        aws cloudfront create-invalidation \
-          --distribution-id ${{ steps.cf-outputs.outputs.distribution-id }} \
-          --paths "/*"
-        echo "✅ CloudFront invalidation initiated"
+        if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+          echo "🔄 Invalidating CloudFront cache..."
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+          echo "✅ CloudFront invalidation initiated"
+        else
+          echo "ℹ️ No CloudFront distribution configured, skipping cache invalidation"
+        fi
         
     - name: Deployment summary
       run: |
         echo "🎉 Deployment completed successfully!"
         echo "📊 Deployment Summary:"
-        echo "  • S3 Bucket: ${{ steps.cf-outputs.outputs.bucket-name }}"
-        echo "  • CloudFront Distribution: ${{ steps.cf-outputs.outputs.distribution-id }}"
-        echo "  • Website URL: ${{ steps.cf-outputs.outputs.cloudfront-url }}"
+        echo "  • S3 Bucket: ${{ secrets.S3_BUCKET_NAME }}"
+        echo "  • AWS Region: ${{ secrets.AWS_REGION }}"
+        if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+          echo "  • CloudFront Distribution: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}"
+        fi
         echo ""
-        echo "🌐 Your application is now live at:"
-        echo "${{ steps.cf-outputs.outputs.cloudfront-url }}"
+        echo "🌐 Your application is now live!"
